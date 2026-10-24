@@ -598,22 +598,22 @@ document.getElementById('app').addEventListener('change', e => {
   if (e.target.id==='who'){ state.current=e.target.value; state.cart={}; render(); toast('Viendo la app como '+client(state.current).name); }
 });
 /* ---------- Base compartida: pedidos y clientes en tiempo real entre teléfonos ---------- */
-const SB_URL = '%%SB_URL%%', SB_KEY = '%%SB_KEY%%';
+const SB_URL = 'https://spzpepkqaitydmhmwrdb.supabase.co', SB_KEY = 'sb_publishable_T3iC_S46TSmCHEjDAcd5tg_0FP_KBLB';
 function makeDb(){
-  if (!window.supabase || SB_URL.startsWith('%%')) return null;
+  if (!window.supabase) return null;
   const sb = window.supabase.createClient(SB_URL, SB_KEY);
   return {
     collection(name){
       return {
-        doc(id){ return { async set(obj){ const { error } = await sb.from(name).upsert({ id:String(id), data:obj, updated_at:new Date().toISOString() }); if (error) throw error; } }; },
+        doc(id){ return { async set(obj){ const { error } = await sb.from('emporio_'+name).upsert({ id:String(id), data:obj, updated_at:new Date().toISOString() }); if (error) throw error; } }; },
         onSnapshot(next){
           const load = async () => {
-            const { data, error } = await sb.from(name).select('id,data');
+            const { data, error } = await sb.from('emporio_'+name).select('id,data');
             if (error || !data) return;
             next({ empty: !data.length, docs: data.map(r => ({ data: () => r.data })) });
           };
           load();
-          sb.channel('rt-' + name).on('postgres_changes', { event:'*', schema:'public', table:name }, load).subscribe();
+          sb.channel('rt-' + name).on('postgres_changes', { event:'*', schema:'public', table:'emporio_'+name }, load).subscribe();
           setInterval(load, 20000);
           document.addEventListener('visibilitychange', () => { if (!document.hidden) load(); });
         },
